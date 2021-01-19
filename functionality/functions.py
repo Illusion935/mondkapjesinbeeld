@@ -67,8 +67,15 @@ def detect_faces(gray, old_faces, MIN_NEIGHBOURS=5):
                 face.rio = rio
                 updated_faces.append(face)
                 break
-        updated_faces[-1] = detect_mouth(gray, updated_faces[-1])
+        # updated_faces[-1] = detect_mouth(gray, updated_faces[-1])
 
+    return updated_faces
+
+
+def detect_mask(gray, faces):
+    updated_faces = faces
+    for i in range(0, len(faces)):
+        updated_faces[i] = detect_mouth(gray, faces[i])
     return updated_faces
 
 
