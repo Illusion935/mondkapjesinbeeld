@@ -24,3 +24,4 @@ if __name__ == "__main__":
             break
 
     print("bye")
+    print("isa was here")
