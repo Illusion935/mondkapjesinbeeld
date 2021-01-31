@@ -5,3 +5,5 @@
 /dist
 main.spec
 tekst.txt
+functionality/__pycache__/Face.cpython-38.pyc
+functionality/__pycache__/functions.cpython-38.pyc
