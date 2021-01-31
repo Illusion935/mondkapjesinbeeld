@@ -12,10 +12,10 @@ if __name__ == "__main__":
         # Convert image into gray
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        frame = caffe_detect_faces(frame, faces)
-        # faces = detect_mask(gray, faces)
-        # frame = draw_on_frame(frame, faces)
+        faces = caffe_detect_faces(frame, faces)
 
+        faces = detect_mask_with_model(faces)
+        frame = draw_on_frame(frame, faces)
         cv2.imshow("window", frame)
         k = cv2.waitKey(30) & 0xFF
         if k == 27:
