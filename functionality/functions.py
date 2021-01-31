@@ -6,7 +6,12 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 import random
+import tkinter as tk
+from tkinter import simpledialog
 
+
+
+from functionality.interface import *
 from .Face import Face
 
 face_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_frontalface_default.xml")
@@ -174,10 +179,22 @@ def detect_mouth(gray, face, MIN_NEIGHBOURS=5):
     return face
 
 
-def draw_on_frame(frame, faces):
+def draw_on_frame(frame, faces, gebruiker_input):
+
     for face in faces:
         x, y, w, h = face.roi
         # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
+
+        bottomLeftCornerOfText = (10,30)
+        cv2.putText(
+            frame,
+            gebruiker_input,
+            (25, 25),  
+            font, 1,  
+            (0, 255, 255),  
+            2,  
+            cv2.LINE_4,
+        )
 
         if face.done_calculating == True:
             if face.mask_detected == True:

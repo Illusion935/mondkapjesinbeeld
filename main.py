@@ -1,4 +1,5 @@
 from functionality.functions import *
+from functionality.interface import *
 
 cap = cv2.VideoCapture(1)
 faces = []
@@ -7,6 +8,8 @@ fourcc = cv2.VideoWriter_fourcc(*"XVID")
 
 
 if __name__ == "__main__":
+
+    gebruiker_input= interface()
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
@@ -16,8 +19,7 @@ if __name__ == "__main__":
 
         faces = caffe_detect_faces(frame, faces)
         faces = detect_mask_with_model(faces)
-        frame = draw_on_frame(frame, faces)
-
+        frame = draw_on_frame(frame, faces, gebruiker_input)
         cv2.imshow("window", frame)
         k = cv2.waitKey(30) & 0xFF
         if k == 27:
