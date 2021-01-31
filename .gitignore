@@ -1,2 +1,6 @@
 /functionality/__pycache__
-/models
+/data
+/build
+/__pycache__
+/dist
+main.spec
