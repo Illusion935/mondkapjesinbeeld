@@ -202,23 +202,23 @@ def draw_smiley(frame, roi, emoticon):
         )
         frame[y_above_face:y, x : x + w] = np.array(face_roi_PIL)
     else:
-        # try:
-        face_roi_PIL = Image.fromarray(frame_rgb[y : y + h, x - w : x + 2 * w])
-        font_PIL = ImageFont.truetype(
-            "NotoColorEmoji.ttf",
-            size=FONT_SIZE,
-            layout_engine=ImageFont.LAYOUT_RAQM,
-        )
-        draw = ImageDraw.Draw(face_roi_PIL)
-        draw.text(
-            (int(w + w / 2 - FONT_SIZE / 2), 0),
-            smiley,
-            fill="#faa",
-            embedded_color=True,
-            font=font_PIL,
-        )
-        face_roi_BGR = cv2.cvtColor(np.array(face_roi_PIL), cv2.COLOR_RGB2BGR)
-        frame[y : y + h, x - w : x + 2 * w] = face_roi_BGR
-    # except:
-    #     pass
+        try:
+            face_roi_PIL = Image.fromarray(frame_rgb[y : y + h, x - w : x + 2 * w])
+            font_PIL = ImageFont.truetype(
+                "NotoColorEmoji.ttf",
+                size=FONT_SIZE,
+                layout_engine=ImageFont.LAYOUT_RAQM,
+            )
+            draw = ImageDraw.Draw(face_roi_PIL)
+            draw.text(
+                (int(w + w / 2 - FONT_SIZE / 2), 0),
+                smiley,
+                fill="#faa",
+                embedded_color=True,
+                font=font_PIL,
+            )
+            face_roi_BGR = cv2.cvtColor(np.array(face_roi_PIL), cv2.COLOR_RGB2BGR)
+            frame[y : y + h, x - w : x + 2 * w] = face_roi_BGR
+        except:
+            pass
     return frame
