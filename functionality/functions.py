@@ -5,13 +5,14 @@ import emoji
 import os
 import tensorflow as tf
 from tensorflow import keras
+import random
 
 from .Face import Face
 
 face_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_frontalface_default.xml")
 mouth_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_mcs_mouth.xml")
 
-new_model = tf.keras.models.load_model("data/models/Aman_kumar_model.h5")
+aman_kumar_model = tf.keras.models.load_model("data/models/Aman_kumar_model.h5")
 cvNet = cv2.dnn.readNetFromCaffe(
     "data/models/caffemodel/architecture.txt",
     "data/models/caffemodel/weights.caffemodel",
@@ -28,6 +29,20 @@ font_color = (255, 0, 0)
 not_weared_mask_font_color = (0, 0, 255)
 thickness = 2
 font_scale = 0.5
+
+
+def load_images_from_folder(folder):
+    images = []
+    for filename in os.listdir(folder):
+        img = cv2.imread(os.path.join(folder, filename))
+        if img is not None:
+            images.append(img)
+    return images
+
+
+# load emoji's
+positive_emojis = load_images_from_folder("data/emojis/positive")
+negative_emojis = load_images_from_folder("data/emojis/negative")
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -57,10 +72,12 @@ def caffe_detect_faces(frame, old_faces):
             if endX - startX > 0.75 * w or endY - startY > 0.9 * h:
                 break
             confidence = detections[0, 0, i, 2]
-            if confidence > 0.11:
+            if confidence > 0.17:
                 roi = [startX, startY, endX - startX, endY - startY]
                 roi_img = frame[startY:endY, startX:endX]
-                updated_faces.append(Face(roi, roi_img))
+                pos_emoji = random.choice(positive_emojis)
+                neg_emoji = random.choice(negative_emojis)
+                updated_faces.append(Face(roi, pos_emoji, neg_emoji, roi_img))
                 for face in old_faces:
                     if (
                         abs(face.roi[0] - roi[0]) < ALLOWED_DIFF
@@ -70,9 +87,9 @@ def caffe_detect_faces(frame, old_faces):
                         face.roi = roi
                         face.roi_img = roi_img
                         updated_faces.append(face)
+                        old_faces.remove(face)
                         break
 
-                cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 0, 255), 2)
         except:
             pass
 
@@ -99,6 +116,7 @@ def detect_faces(gray, old_faces, MIN_NEIGHBOURS=5):
                 updated_faces.pop(-1)
                 face.roi = roi
                 updated_faces.append(face)
+                old_faces.remove(face)
                 break
 
     return updated_faces
@@ -113,17 +131,19 @@ def detect_mask_with_model(old_faces):
             roi_img = face.roi_img
             roi_img = cv2.resize(roi_img, (img_size, img_size))
             roi_img = np.array(roi_img) / 255.0
-            roi_img = roi_img.reshape(1, 124, 124, 3)
-            result = new_model.predict(roi_img)
-            print(result)
+            roi_img = roi_img.reshape(1, img_size, img_size, 3)
+            result = aman_kumar_model.predict(roi_img)
             result = result[0][0]
-            if result < 0.5:
+            if result < 0.11:
                 face.mask_detected = True
-            elif result >= 0.5:
+            elif result >= 0.11:
                 face.mask_detected = False
             face.done_calculating = True
-        except:
-            pass
+        except cv2.error as e:
+            if e.code == cv2.Error.StsAssert:
+                print(roi_img.shape)
+            else:
+                pass
         updated_faces.append(face)
     return updated_faces
 
@@ -148,22 +168,22 @@ def detect_mouth(gray, face, MIN_NEIGHBOURS=5):
         lower_face_roi_gray, 1.5, MIN_NEIGHBOURS
     )
     if len(mouth_rects) > 0 and face.done_calculating == False:
-        face.track_mask_detections("No mask")
+        face.count_mask_detections("No mask")
     elif face.done_calculating == False:
-        face.track_mask_detections("Mask")
+        face.count_mask_detections("Mask")
     return face
 
 
 def draw_on_frame(frame, faces):
     for face in faces:
         x, y, w, h = face.roi
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
+        # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
         if face.done_calculating == True:
             if face.mask_detected == True:
-                frame = draw_smiley(frame, face.roi, ":smiley:")
+                frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
             elif face.mask_detected == False:
-                frame = draw_smiley(frame, face.roi, ":persevere:")
+                frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
         else:
             cv2.putText(
                 frame[int(y - h / 3) : y + h, x : x + 5 * w],
@@ -179,46 +199,36 @@ def draw_on_frame(frame, faces):
     return frame
 
 
-def draw_smiley(frame, roi, emoticon):
+def draw_smiley(frame, roi, emoji_img):
     x, y, w, h = roi
-    smiley = str(emoji.emojize(emoticon, use_aliases=True))
-    sizes = [20, 32, 40, 48, 64, 96, 160]
-    FONT_SIZE = 109  # min(sizes, key=lambda x: abs(x - w))
-    y_above_face = int(y - FONT_SIZE * 0.86)
-    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    if False:  # y_above_face > 0:
-        face_roi_PIL = Image.fromarray(frame[y_above_face:y, x : x + w])
+    startX = x
+    endX = x + w
+    startY = y
+    endY = y + w
+    emoji_width = endX - startX
+    emoji_height = endY - startY
 
-        font_PIL = ImageFont.truetype("SamsungColorEmoji.ttf", FONT_SIZE)
-        x_draw = int(w / 2 - FONT_SIZE / 2)
-        y_draw = int(face_roi_PIL.height - FONT_SIZE * 1.33 * 0.85)
-
-        draw = ImageDraw.Draw(face_roi_PIL)
-        draw.text(
-            (x_draw, y_draw),
-            smiley,
-            (255, 255, 255),
-            font=font_PIL,
-        )
-        frame[y_above_face:y, x : x + w] = np.array(face_roi_PIL)
-    else:
-        # try:
-        face_roi_PIL = Image.fromarray(frame_rgb[y : y + h, x - w : x + 2 * w])
-        font_PIL = ImageFont.truetype(
-            "NotoColorEmoji.ttf",
-            size=FONT_SIZE,
-            layout_engine=ImageFont.LAYOUT_RAQM,
-        )
-        draw = ImageDraw.Draw(face_roi_PIL)
-        draw.text(
-            (int(w + w / 2 - FONT_SIZE / 2), 0),
-            smiley,
-            fill="#faa",
-            embedded_color=True,
-            font=font_PIL,
-        )
-        face_roi_BGR = cv2.cvtColor(np.array(face_roi_PIL), cv2.COLOR_RGB2BGR)
-        frame[y : y + h, x - w : x + 2 * w] = face_roi_BGR
-    # except:
-    #     pass
+    emoji_img = cv2.resize(emoji_img, (emoji_width, emoji_height))
+    roi_img = frame[startY:endY, startX:endX]
+    # Create a mask of emoji_img and create its inverse mask
+    img2gray = cv2.cvtColor(emoji_img, cv2.COLOR_BGR2GRAY)
+    ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+    mask_inv = cv2.bitwise_not(mask)
+    try:
+        # Now black-out the area of emoji in ROI
+        img1_bg = cv2.bitwise_and(roi_img, roi_img, mask=mask_inv)
+        # Take only region of emoji from emoji_img.
+        img2_fg = cv2.bitwise_and(emoji_img, emoji_img, mask=mask)
+        # Put emoji in ROI and modify the main image
+        dst = cv2.add(img1_bg, img2_fg)
+        frame[startY:endY, startX:endX] = dst
+    except cv2.error as e:
+        if e.code == cv2.Error.StsUnmatchedSizes:
+            print("frame: ", img1_bg.shape)
+            print("emoji img: ", img2_fg.shape)
+            pass
+        elif e.code == cv2.Error.StsAssert:
+            print("roi: ", roi_img.shape)
+        else:
+            print(e)
     return frame
