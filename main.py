@@ -1,7 +1,7 @@
 from functionality.functions import *
 from functionality.interface import *
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 faces = []
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
 # out = cv2.VideoWriter("out.avi", fourcc, 20.0, (640, 480))
@@ -9,7 +9,7 @@ fourcc = cv2.VideoWriter_fourcc(*"XVID")
 
 if __name__ == "__main__":
 
-    gebruiker_input= interface()
+    gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
