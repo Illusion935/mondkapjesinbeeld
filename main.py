@@ -8,13 +8,30 @@ fourcc = cv2.VideoWriter_fourcc(*"XVID")
 dim = (1080, 720)
 # out = cv2.VideoWriter("out.avi", fourcc, 20.0, dim)
 
+def show_error(text):
+    print(text)
+
+def webcam_check_failed(frame):
+    if frame is None:
+        return True
+    else: return False
 
 if __name__ == "__main__":
+    # Check if webcam can be found
+    frame = cap.read()[1]
+    if webcam_check_failed(frame):
+        show_error("Webcam not found")
+        assert frame, "Webcam not found"
+
     cv2.namedWindow("window", cv2.WINDOW_FREERATIO)
 
+    # Ask for user input for the message of the day
     gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
+        if webcam_check_failed(frame):
+            show_error("Webcam not found")
+            break
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
         # Convert image into gray
@@ -25,10 +42,11 @@ if __name__ == "__main__":
         frame = draw_on_frame(frame, faces, gebruiker_input)
         cv2.imshow("window", frame)
         k = cv2.waitKey(30) & 0xFF
-        if k == 27:
-            # Release video
-            cap.release()
-            cv2.destroyAllWindows()
-            break
 
+        # Exit program with ESC key
+        if k == 27:
+            break
+    # Release video
+    cap.release()
+    cv2.destroyAllWindows()
     print("bye")

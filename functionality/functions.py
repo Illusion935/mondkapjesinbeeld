@@ -147,17 +147,16 @@ def draw_on_frame(frame, faces, gebruiker_input):
             frame,
             bottom_message,
             (btm_x, btm_y),
-            color_RGB=(220, 5, 7),
         )
 
         if face.done_calculating == True:
             if face.mask_detected == True:
                 text = "Mondmasker gevonden!"
-                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar)
+                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar, color_RGB=(5, 220, 7))
                 frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
             elif face.mask_detected == False:
                 text = "Mondmasker vergeten!"
-                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar)
+                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar, color_RGB=(220, 5, 7))
                 frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
 
     return frame
