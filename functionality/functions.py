@@ -128,6 +128,13 @@ def draw_on_frame(frame, faces, gebruiker_input):
     frame_h, frame_w = frame.shape[:2]
     top_message = gebruiker_input
     bottom_message = "Dit beeld wordt niet opgeslagen"
+    # Bottom message
+    btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
+    frame = put_text(
+        frame,
+        bottom_message,
+        (btm_x, btm_y),
+    )
     for face in faces:
         x, y, w, h = face.roi
 
@@ -139,14 +146,6 @@ def draw_on_frame(frame, faces, gebruiker_input):
             color_RGB=(247, 226, 92),
             thickness=2,
             line=cv2.LINE_4,
-        )
-
-        # Bottom message
-        btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
-        frame = put_text(
-            frame,
-            bottom_message,
-            (btm_x, btm_y),
         )
 
         if face.done_calculating == True:
@@ -220,7 +219,7 @@ def put_text(
     text,
     org,
     scale=1,
-    color_RGB=(0, 0, 0),
+    color_RGB=(255, 255, 255),
     thickness=1,
     line=cv2.LINE_AA,
 ):
