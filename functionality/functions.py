@@ -148,8 +148,6 @@ def draw_on_frame(frame, faces, gebruiker_input):
             (btm_x, btm_y),
             color_RGB=(220, 5, 7),
         )
-        print(len(bottom_message))
-        print(int(frame_w - frame_w / 2.7))
 
         if face.done_calculating == True:
             if face.mask_detected == True:
