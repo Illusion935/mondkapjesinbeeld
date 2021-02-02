@@ -127,7 +127,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
     scalar = 200
     frame_h, frame_w = frame.shape[:2]
     top_message = gebruiker_input
-    bottom_message = "Dit slaat geen beelden op."
+    bottom_message = "Dit beeld wordt niet opgeslagen"
     for face in faces:
         x, y, w, h = face.roi
 
@@ -152,11 +152,23 @@ def draw_on_frame(frame, faces, gebruiker_input):
         if face.done_calculating == True:
             if face.mask_detected == True:
                 text = "Mondmasker gevonden!"
-                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar, color_RGB=(5, 220, 7))
+                frame = put_text(
+                    frame,
+                    text,
+                    (x - int(w / 3), y),
+                    scale=w / scalar,
+                    color_RGB=(0, 255, 0),
+                )
                 frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
             elif face.mask_detected == False:
                 text = "Mondmasker vergeten!"
-                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar, color_RGB=(220, 5, 7))
+                frame = put_text(
+                    frame,
+                    text,
+                    (x - int(w / 3), y),
+                    scale=w / scalar,
+                    color_RGB=(220, 5, 7),
+                )
                 frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
 
     return frame
@@ -208,7 +220,7 @@ def put_text(
     text,
     org,
     scale=1,
-    color_RGB=(0, 255, 255),
+    color_RGB=(0, 0, 0),
     thickness=1,
     line=cv2.LINE_AA,
 ):
