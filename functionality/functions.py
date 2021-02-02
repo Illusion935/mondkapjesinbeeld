@@ -12,6 +12,7 @@ from tkinter import simpledialog
 
 from functionality.interface import *
 from .Face import Face
+from config.config import *
 
 face_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_frontalface_default.xml")
 mouth_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_mcs_mouth.xml")
@@ -72,7 +73,7 @@ def caffe_detect_faces(frame, old_faces):
             if endX - startX > 0.75 * w or endY - startY > 0.9 * h:
                 break
             confidence = detections[0, 0, i, 2]
-            if confidence > 0.22:
+            if confidence > conf_bar:
                 roi = [startX, startY, endX - startX, endY - startY]
                 roi_img = frame[startY:endY, startX:endX]
                 pos_emoji = random.choice(positive_emojis)
