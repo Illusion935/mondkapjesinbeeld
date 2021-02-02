@@ -10,7 +10,6 @@ import tkinter as tk
 from tkinter import simpledialog
 
 
-
 from functionality.interface import *
 from .Face import Face
 
@@ -27,13 +26,9 @@ cvNet = cv2.dnn.readNetFromCaffe(
 bw_threshold = 80
 
 # User message
-font = cv2.FONT_HERSHEY_SIMPLEX
-org = (30, 30)
+font = cv2.FONT_HERSHEY_DUPLEX
 weared_mask_font_color = (255, 255, 255)
-font_color = (255, 0, 0)
 not_weared_mask_font_color = (0, 0, 255)
-thickness = 2
-font_scale = 0.5
 
 
 def load_images_from_folder(folder):
@@ -58,7 +53,7 @@ def adjust_gamma(image, gamma=1.0):
 
 def caffe_detect_faces(frame, old_faces):
     gamma = 2.0
-    ALLOWED_DIFF = 30
+    ALLOWED_DIFF = 150
     updated_faces = []
     h = frame.shape[0]
     w = frame.shape[1]
@@ -77,7 +72,7 @@ def caffe_detect_faces(frame, old_faces):
             if endX - startX > 0.75 * w or endY - startY > 0.9 * h:
                 break
             confidence = detections[0, 0, i, 2]
-            if confidence > 0.17:
+            if confidence > 0.22:
                 roi = [startX, startY, endX - startX, endY - startY]
                 roi_img = frame[startY:endY, startX:endX]
                 pos_emoji = random.choice(positive_emojis)
@@ -101,32 +96,6 @@ def caffe_detect_faces(frame, old_faces):
     return updated_faces
 
 
-def detect_faces(gray, old_faces, MIN_NEIGHBOURS=5):
-    updated_faces = []
-    ALLOWED_DIFF = 30
-
-    faces_roi = face_cascade.detectMultiScale(gray, 1.1, MIN_NEIGHBOURS)
-    if len(faces_roi) == 0:
-        thresh, black_and_white = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
-        faces_roi = face_cascade.detectMultiScale(black_and_white, 1.1, 4)
-
-    for roi in faces_roi:
-        updated_faces.append(Face(roi))
-
-        for face in old_faces:
-            if (
-                abs(face.roi[0] - roi[0]) < ALLOWED_DIFF
-                and abs(face.roi[1] - roi[1]) < ALLOWED_DIFF
-            ):
-                updated_faces.pop(-1)
-                face.roi = roi
-                updated_faces.append(face)
-                old_faces.remove(face)
-                break
-
-    return updated_faces
-
-
 def detect_mask_with_model(old_faces):
     updated_faces = []
     img_size = 124
@@ -146,92 +115,79 @@ def detect_mask_with_model(old_faces):
             face.done_calculating = True
         except cv2.error as e:
             if e.code == cv2.Error.StsAssert:
-                print(roi_img.shape)
-            else:
                 pass
+            else:
+                print(e)
         updated_faces.append(face)
     return updated_faces
 
 
-def detect_mask(gray, faces):
-    img_size = 124
-
-    updated_faces = faces
-    for i in range(0, len(faces)):
-        updated_faces[i] = detect_mouth(gray, faces[i])
-    return updated_faces
-
-
-def detect_mouth(gray, face, MIN_NEIGHBOURS=5):
-    x, y, w, h = face.roi
-    lower_face_roi_gray = gray[
-        int(y + h / 2) : y + h,
-        x : x + w,
-    ]
-
-    mouth_rects = mouth_cascade.detectMultiScale(
-        lower_face_roi_gray, 1.5, MIN_NEIGHBOURS
-    )
-    if len(mouth_rects) > 0 and face.done_calculating == False:
-        face.count_mask_detections("No mask")
-    elif face.done_calculating == False:
-        face.count_mask_detections("Mask")
-    return face
-
-
 def draw_on_frame(frame, faces, gebruiker_input):
-
+    scalar = 200
+    frame_h, frame_w = frame.shape[:2]
+    top_message = gebruiker_input
+    bottom_message = "Dit slaat geen beelden op."
     for face in faces:
         x, y, w, h = face.roi
-        # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
-        bottomLeftCornerOfText = (10,30)
-        cv2.putText(
+        # Top message
+        frame = put_text(
             frame,
-            gebruiker_input,
-            (25, 25),  
-            font, 1,  
-            (0, 255, 255),  
-            2,  
-            cv2.LINE_4,
+            top_message,
+            (10, 25),
+            color_RGB=(247, 226, 92),
+            thickness=2,
+            line=cv2.LINE_4,
         )
+
+        # Bottom message
+        btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
+        frame = put_text(
+            frame,
+            bottom_message,
+            (btm_x, btm_y),
+            color_RGB=(220, 5, 7),
+        )
+        print(len(bottom_message))
+        print(int(frame_w - frame_w / 2.7))
 
         if face.done_calculating == True:
             if face.mask_detected == True:
+                text = "Mondmasker gevonden!"
+                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar)
                 frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
             elif face.mask_detected == False:
+                text = "Mondmasker vergeten!"
+                frame = put_text(frame, text, (x - int(w / 3), y), scale=w / scalar)
                 frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
-        else:
-            cv2.putText(
-                frame[int(y - h / 3) : y + h, x : x + 5 * w],
-                "calculating",
-                org,
-                font,
-                font_scale,
-                font_color,
-                thickness,
-                cv2.LINE_AA,
-            )
 
     return frame
+
+
+def calculate_bottom_text_pos(frame_dim, text):
+    frame_w, frame_h = frame_dim
+    x = int(frame_w - len(text) * 17)
+    y = int(frame_h - frame_h / 40)
+    return (x, y)
 
 
 def draw_smiley(frame, roi, emoji_img):
     x, y, w, h = roi
     startX = x
-    endX = x + w
     startY = y
+    endX = x + w
     endY = y + w
     emoji_width = endX - startX
     emoji_height = endY - startY
 
     emoji_img = cv2.resize(emoji_img, (emoji_width, emoji_height))
     roi_img = frame[startY:endY, startX:endX]
-    # Create a mask of emoji_img and create its inverse mask
-    img2gray = cv2.cvtColor(emoji_img, cv2.COLOR_BGR2GRAY)
-    ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
-    mask_inv = cv2.bitwise_not(mask)
+
     try:
+        # Create a mask of emoji_img and create its inverse mask
+        img2gray = cv2.cvtColor(emoji_img, cv2.COLOR_BGR2GRAY)
+        ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+        mask_inv = cv2.bitwise_not(mask)
         # Now black-out the area of emoji in ROI
         img1_bg = cv2.bitwise_and(roi_img, roi_img, mask=mask_inv)
         # Take only region of emoji from emoji_img.
@@ -241,11 +197,32 @@ def draw_smiley(frame, roi, emoji_img):
         frame[startY:endY, startX:endX] = dst
     except cv2.error as e:
         if e.code == cv2.Error.StsUnmatchedSizes:
-            print("frame: ", img1_bg.shape)
-            print("emoji img: ", img2_fg.shape)
             pass
         elif e.code == cv2.Error.StsAssert:
-            print("roi: ", roi_img.shape)
+            pass
         else:
             print(e)
+    return frame
+
+
+def put_text(
+    frame,
+    text,
+    org,
+    scale=1,
+    color_RGB=(0, 255, 255),
+    thickness=1,
+    line=cv2.LINE_AA,
+):
+    color_BGR = color_RGB[::-1]
+    cv2.putText(
+        frame,
+        text,
+        org,
+        font,
+        scale,
+        color_BGR,
+        thickness,
+        line,
+    )
     return frame

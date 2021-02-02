@@ -1,19 +1,22 @@
 from functionality.functions import *
 from functionality.interface import *
+from config.config import *
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(cam_id)
 faces = []
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
-# out = cv2.VideoWriter("out.avi", fourcc, 20.0, (640, 480))
+dim = (1080, 720)
+# out = cv2.VideoWriter("out.avi", fourcc, 20.0, dim)
 
 
 if __name__ == "__main__":
+    cv2.namedWindow("window", cv2.WINDOW_FREERATIO)
 
     gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
-
+        frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
         # Convert image into gray
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
