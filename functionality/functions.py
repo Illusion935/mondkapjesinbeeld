@@ -209,7 +209,6 @@ def draw_smiley(frame, roi, emoji_BGRA):
         img2_fg = cv2.bitwise_and(emoji_BGR, emoji_BGR, mask=mask)
         # Put emoji in ROI and modify the main image
         dst = cv2.add(img1_bg, img2_fg)
-        cv2.imshow("boi", dst)
         frame[startY:endY, startX:endX] = dst
     except cv2.error as e:
         if e.code == cv2.Error.StsUnmatchedSizes:
