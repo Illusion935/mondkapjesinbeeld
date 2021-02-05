@@ -35,7 +35,7 @@ not_weared_mask_font_color = (0, 0, 255)
 def load_images_from_folder(folder):
     images = []
     for filename in os.listdir(folder):
-        img = cv2.imread(os.path.join(folder, filename))
+        img = cv2.imread(os.path.join(folder, filename), cv2.IMREAD_UNCHANGED)
         if img is not None:
             images.append(img)
     return images
@@ -124,19 +124,35 @@ def detect_mask_with_model(old_faces):
 
 
 def draw_on_frame(frame, faces, gebruiker_input):
-    scalar = 200
+    scalar = 170
     frame_h, frame_w = frame.shape[:2]
     top_message = gebruiker_input
     bottom_message = "Dit beeld wordt niet opgeslagen"
-    # Bottom message
-    btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
-    frame = put_text(
-        frame,
-        bottom_message,
-        (btm_x, btm_y),
-    )
+
     for face in faces:
         x, y, w, h = face.roi
+
+        if face.done_calculating == True:
+            if face.mask_detected == True:
+                frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
+                text = "Mondmasker gevonden!"
+                frame = put_text(
+                    frame,
+                    text,
+                    (x - int(w / 2), y),
+                    scale=w / scalar,
+                    color_RGB=(0, 255, 0),
+                )
+            elif face.mask_detected == False:
+                frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
+                text = "Mondmasker vergeten!"
+                frame = put_text(
+                    frame,
+                    text,
+                    (x - int(w / 2), y),
+                    scale=w / scalar,
+                    color_RGB=(220, 5, 7),
+                )
 
         # Top message
         frame = put_text(
@@ -148,27 +164,13 @@ def draw_on_frame(frame, faces, gebruiker_input):
             line=cv2.LINE_4,
         )
 
-        if face.done_calculating == True:
-            if face.mask_detected == True:
-                text = "Mondmasker gevonden!"
-                frame = put_text(
-                    frame,
-                    text,
-                    (x - int(w / 3), y),
-                    scale=w / scalar,
-                    color_RGB=(0, 255, 0),
-                )
-                frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
-            elif face.mask_detected == False:
-                text = "Mondmasker vergeten!"
-                frame = put_text(
-                    frame,
-                    text,
-                    (x - int(w / 3), y),
-                    scale=w / scalar,
-                    color_RGB=(220, 5, 7),
-                )
-                frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
+    # Bottom message
+    btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
+    frame = put_text(
+        frame,
+        bottom_message,
+        (btm_x, btm_y),
+    )
 
     return frame
 
@@ -180,7 +182,7 @@ def calculate_bottom_text_pos(frame_dim, text):
     return (x, y)
 
 
-def draw_smiley(frame, roi, emoji_img):
+def draw_smiley(frame, roi, emoji_BGRA):
     x, y, w, h = roi
     startX = x
     startY = y
@@ -189,20 +191,25 @@ def draw_smiley(frame, roi, emoji_img):
     emoji_width = endX - startX
     emoji_height = endY - startY
 
-    emoji_img = cv2.resize(emoji_img, (emoji_width, emoji_height))
+    emoji_BGRA = cv2.resize(emoji_BGRA, (emoji_width, emoji_height))
     roi_img = frame[startY:endY, startX:endX]
 
     try:
-        # Create a mask of emoji_img and create its inverse mask
-        img2gray = cv2.cvtColor(emoji_img, cv2.COLOR_BGR2GRAY)
-        ret, mask = cv2.threshold(img2gray, 10, 255, cv2.THRESH_BINARY)
+        # Get the BGR image and the Alpha channel separate from the BGRA emoji image
+        emoji_BGR = emoji_BGRA[:, :, :3]
+        alpha = emoji_BGRA[:, :, 3]
+        # Threshold based on the alpha channel of the emoji img.
+        # It's thresholded at 200, because emojis sometimes have
+        # some shadow with an Alpha higher than 0
+        ret, mask = cv2.threshold(alpha, 150, 255, cv2.THRESH_BINARY)
         mask_inv = cv2.bitwise_not(mask)
-        # Now black-out the area of emoji in ROI
+        # # Now black-out the area of emoji in ROI
         img1_bg = cv2.bitwise_and(roi_img, roi_img, mask=mask_inv)
-        # Take only region of emoji from emoji_img.
-        img2_fg = cv2.bitwise_and(emoji_img, emoji_img, mask=mask)
+        # # Take only region of emoji from emoji_img.
+        img2_fg = cv2.bitwise_and(emoji_BGR, emoji_BGR, mask=mask)
         # Put emoji in ROI and modify the main image
         dst = cv2.add(img1_bg, img2_fg)
+        cv2.imshow("boi", dst)
         frame[startY:endY, startX:endX] = dst
     except cv2.error as e:
         if e.code == cv2.Error.StsUnmatchedSizes:
