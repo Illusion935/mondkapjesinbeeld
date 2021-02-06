@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import simpledialog
 import threading
 from playsound import playsound
-
+import glob
 
 from functionality.interface import *
 from .Face import Face
@@ -39,10 +39,6 @@ def play_sound(audiofile):
     playsound(audiofile)
 
 
-# Create thread
-sound_thread = threading.Thread(target=play_sound, daemon=True)
-
-
 def load_images_from_folder(folder):
     images = []
     for filename in os.listdir(folder):
@@ -51,10 +47,15 @@ def load_images_from_folder(folder):
             images.append(img)
     return images
 
+def load_audios_from_folder(folder):
+    audio = os.listdir(folder)
+    return audio
+
 
 # load emoji's
 positive_emojis = load_images_from_folder("data/emojis/positive")
 negative_emojis = load_images_from_folder("data/emojis/negative")
+audio_files = load_audios_from_folder("data/audio")
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -64,6 +65,8 @@ def adjust_gamma(image, gamma=1.0):
 
 
 def caffe_detect_faces(frame, old_faces):
+    # Create thread for playing sound
+    sound_thread = threading.Thread(target=play_sound, daemon=True)
     gamma = 2.0
     ALLOWED_DIFF = 150
     updated_faces = []
@@ -102,10 +105,16 @@ def caffe_detect_faces(frame, old_faces):
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
-                if updated_faces(-1).new_face == True:
+
+                if updated_faces[-1].new_face == True:
+                    print(sound_thread)
+                    print("hoi1")
+                    audio= random.choice(audio_files)
+                    print(audio)
                     if not sound_thread.is_alive():
+                        print("ik ben hier 2")
                         sound_thread = threading.Thread(
-                            target=play_sound, args=("billie.mp3",), daemon=True
+                            target=play_sound, args=("data/audio/"+ audio,), daemon=True
                         )
                         sound_thread.start()
 
