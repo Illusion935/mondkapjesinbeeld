@@ -11,12 +11,14 @@ from tkinter import simpledialog
 import threading
 from playsound import playsound
 
+
 from functionality.interface import *
 from .Face import Face
 from config.config import *
 
 face_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_frontalface_default.xml")
 mouth_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_mcs_mouth.xml")
+
 
 aman_kumar_model = tf.keras.models.load_model("data/models/Aman_kumar_model.h5")
 cvNet = cv2.dnn.readNetFromCaffe(
@@ -28,9 +30,6 @@ cvNet = cv2.dnn.readNetFromCaffe(
 bw_threshold = 80
 
 # User message
-font = cv2.FONT_HERSHEY_DUPLEX
-weared_mask_font_color = (255, 255, 255)
-not_weared_mask_font_color = (0, 0, 255)
 
 
 def play_sound(audiofile):
@@ -166,7 +165,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                     frame,
                     text,
                     (x - int(w / 2), y),
-                    scale=w / scalar,
+                    font_size=(int(w /2)),
                     color_RGB=(0, 255, 0),
                 )
             elif face.mask_detected == False:
@@ -176,7 +175,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                     frame,
                     text,
                     (x - int(w / 2), y),
-                    scale=w / scalar,
+                    font_size=(int(w /2)),
                     color_RGB=(220, 5, 7),
                 )
 
@@ -248,22 +247,20 @@ def draw_smiley(frame, roi, emoji_BGRA):
 
 def put_text(
     frame,
-    text,
+    text, 
     org,
-    scale=1,
+    font_size=15,
     color_RGB=(255, 255, 255),
     thickness=1,
     line=cv2.LINE_AA,
+
 ):
-    color_BGR = color_RGB[::-1]
-    cv2.putText(
-        frame,
-        text,
-        org,
-        font,
-        scale,
-        color_BGR,
-        thickness,
-        line,
-    )
+    font = ImageFont.truetype("data/fonts/verdana.ttf", 15) #hopelijk ja xd
+
+    frame_RGB = cv2.cvtColor(frame,  cv2.COLOR_BGR2RGB)
+    draw = ImageDraw.Draw(frame_RGB)
+    draw.text(org, text, font=font, fill=color_RGB)
+
+    frame = cv2.cvtColor(frame_RGB, cv2.COLOR_RGB2BGR)
+    
     return frame
