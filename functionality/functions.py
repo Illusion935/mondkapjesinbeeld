@@ -10,7 +10,6 @@ import tkinter as tk
 from tkinter import simpledialog
 import threading
 from playsound import playsound
-import glob
 
 from functionality.interface import *
 from .Face import Face
