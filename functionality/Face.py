@@ -8,6 +8,7 @@ class Face:
         self.mask_detections = []
         self.positive_emoji_img = pos_emoji
         self.negative_emoji_img = neg_emoji
+        self.new_face = True
 
         self.roi = roi
         self.roi_img = roi_img

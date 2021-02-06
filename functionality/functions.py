@@ -8,6 +8,8 @@ from tensorflow import keras
 import random
 import tkinter as tk
 from tkinter import simpledialog
+import threading
+from playsound import playsound
 
 
 from functionality.interface import *
@@ -30,6 +32,15 @@ bw_threshold = 80
 font = cv2.FONT_HERSHEY_DUPLEX
 weared_mask_font_color = (255, 255, 255)
 not_weared_mask_font_color = (0, 0, 255)
+
+
+def play_sound(audiofile):
+    print("hoi")
+    playsound(audiofile)
+
+
+# Create thread
+sound_thread = threading.Thread(target=play_sound, daemon=True)
 
 
 def load_images_from_folder(folder):
@@ -85,11 +96,18 @@ def caffe_detect_faces(frame, old_faces):
                         and abs(face.roi[1] - roi[1]) < ALLOWED_DIFF
                     ):
                         updated_faces.pop(-1)
+                        face.new_face = False
                         face.roi = roi
                         face.roi_img = roi_img
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
+                if updated_faces(-1).new_face == True:
+                    if not sound_thread.is_alive():
+                        sound_thread = threading.Thread(
+                            target=play_sound, args=("billie.mp3",), daemon=True
+                        )
+                        sound_thread.start()
 
         except:
             pass

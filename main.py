@@ -3,6 +3,8 @@ from functionality.interface import *
 from config.config import *
 
 cap = cv2.VideoCapture(cam_id)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 600)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
 faces = []
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
 dim = (1080, 720)
