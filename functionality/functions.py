@@ -33,7 +33,6 @@ bw_threshold = 80
 
 
 def play_sound(audiofile):
-    print("hoi")
     playsound(audiofile)
 
 
@@ -44,6 +43,7 @@ def load_images_from_folder(folder):
         if img is not None:
             images.append(img)
     return images
+
 
 def load_audios_from_folder(folder):
     audio = os.listdir(folder)
@@ -100,24 +100,29 @@ def caffe_detect_faces(frame, old_faces):
                         face.new_face = False
                         face.roi = roi
                         face.roi_img = roi_img
+                        face.wait_till_delete = WAIT_FRAMES
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
 
                 if updated_faces[-1].new_face == True:
-                    print(sound_thread)
-                    print("hoi1")
-                    audio= random.choice(audio_files)
-                    print(audio)
+                    audio = random.choice(audio_files)
                     if not sound_thread.is_alive():
-                        print("ik ben hier 2")
                         sound_thread = threading.Thread(
-                            target=play_sound, args=("data/audio/"+ audio,), daemon=True
+                            target=play_sound,
+                            args=("data/audio/" + audio,),
+                            daemon=True,
                         )
                         sound_thread.start()
-
         except:
             pass
+
+    for face in old_faces:
+        if face.wait_till_delete > 0:
+            face.wait_till_delete -= 1
+            updated_faces.append(face)
+        else:
+            old_faces.remove(face)
 
     return updated_faces
 
@@ -165,7 +170,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                     frame,
                     text,
                     (x - int(w / 2), y),
-                    font_size=(int(w /2)),
+                    font_size=(int(w / 2)),
                     color_RGB=(0, 255, 0),
                 )
             elif face.mask_detected == False:
@@ -175,7 +180,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                     frame,
                     text,
                     (x - int(w / 2), y),
-                    font_size=(int(w /2)),
+                    font_size=(int(w / 2)),
                     color_RGB=(220, 5, 7),
                 )
 
@@ -247,20 +252,21 @@ def draw_smiley(frame, roi, emoji_BGRA):
 
 def put_text(
     frame,
-    text, 
+    text,
     org,
     font_size=15,
     color_RGB=(255, 255, 255),
     thickness=1,
     line=cv2.LINE_AA,
-
 ):
-    font = ImageFont.truetype("data/fonts/verdana.ttf", 15) #hopelijk ja xd
+    font = ImageFont.truetype("data/fonts/verdana.ttf", 15, 0)  # hopelijk ja xd
 
-    frame_RGB = cv2.cvtColor(frame,  cv2.COLOR_BGR2RGB)
-    draw = ImageDraw.Draw(frame_RGB)
-    draw.text(org, text, font=font, fill=color_RGB)
+    frame_RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+    # frame_PIL = Image.fromarray(frame_RGB)
+    # draw = ImageDraw.Draw(frame_PIL)
+    # draw.text(org, text, font=font, fill=color_RGB)
 
+    # frame_RGB = np.array(frame_PIL)
     frame = cv2.cvtColor(frame_RGB, cv2.COLOR_RGB2BGR)
-    
+
     return frame

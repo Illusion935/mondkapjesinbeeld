@@ -1,5 +1,7 @@
+from config.config import *
+
+
 class Face:
-    wait_till_delete = 10
     TAKE_AVERAGE_OF = 10
 
     def __init__(self, roi, pos_emoji=None, neg_emoji=None, roi_img=None):
@@ -9,6 +11,7 @@ class Face:
         self.positive_emoji_img = pos_emoji
         self.negative_emoji_img = neg_emoji
         self.new_face = True
+        self.wait_till_delete = WAIT_FRAMES
 
         self.roi = roi
         self.roi_img = roi_img
