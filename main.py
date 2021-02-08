@@ -2,10 +2,10 @@ from functionality.functions import *
 from functionality.interface import *
 from config.config import *
 
+dim = (1080, 720)
 cap = cv2.VideoCapture(cam_id)
 faces = []
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
-dim = (1080, 720)
 # out = cv2.VideoWriter("out.avi", fourcc, 20.0, dim)
 
 
@@ -33,11 +33,18 @@ if __name__ == "__main__":
     gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
+        frame = cv2.flip(frame, 1)
+        frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
         if webcam_check_failed(frame):
             show_error("Webcam not found")
             break
-        frame = cv2.flip(frame, 1)
-        frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
+        frame_count, fps = calculate_FPS()
+        put_text(
+            frame,
+            "Calc. {0} frames".format(frame_count),
+            (0, frame.shape[0] - 40),
+        )
+        put_text(frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 10))
         # Convert image into gray
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
