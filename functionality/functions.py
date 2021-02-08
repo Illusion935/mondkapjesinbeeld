@@ -78,6 +78,16 @@ def calculate_FPS():
     return (frame_count, fps)
 
 
+def display_fps(frame):
+    frame_count, fps = calculate_FPS()
+    put_text(
+        frame,
+        "Calc. {0} frames".format(frame_count),
+        (0, frame.shape[0] - 40),
+    )
+    put_text(frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 10))
+
+
 def adjust_gamma(image, gamma=1.0):
     invGamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)])

@@ -38,13 +38,7 @@ if __name__ == "__main__":
         if webcam_check_failed(frame):
             show_error("Webcam not found")
             break
-        frame_count, fps = calculate_FPS()
-        put_text(
-            frame,
-            "Calc. {0} frames".format(frame_count),
-            (0, frame.shape[0] - 40),
-        )
-        put_text(frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 10))
+        display_fps(frame)
         # Convert image into gray
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
