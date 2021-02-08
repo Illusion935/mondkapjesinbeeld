@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import simpledialog
 import threading
 from playsound import playsound
+import time
 
 
 from functionality.interface import *
@@ -36,6 +37,14 @@ def play_sound(audiofile):
     playsound(audiofile)
 
 
+# For FPS
+start_time = None
+frame_count = 0
+total_seconds = 0
+do_reset = True
+fps = 0
+
+
 def load_images_from_folder(folder):
     images = []
     for filename in os.listdir(folder):
@@ -54,6 +63,40 @@ def load_audios_from_folder(folder):
 positive_emojis = load_images_from_folder("data/emojis/positive")
 negative_emojis = load_images_from_folder("data/emojis/negative")
 audio_files = load_audios_from_folder("data/audio")
+
+
+def calculate_FPS():
+    global start_time
+    global frame_count
+    global total_seconds
+    global do_reset
+    global fps
+    if start_time is not None:
+        end_time = time.time()
+        seconds = end_time - start_time
+        # Take average of 20 frames
+        if frame_count >= 50:
+            do_reset = True
+        # Start counting after number of frames
+        if frame_count >= 4 and do_reset == True:
+            frame_count = 0
+            total_seconds = 0
+            do_reset = False
+        frame_count += 1
+        total_seconds += seconds
+        fps = frame_count / total_seconds
+    start_time = time.time()
+    return (frame_count, fps)
+
+
+def display_fps(frame):
+    frame_count, fps = calculate_FPS()
+    put_text(
+        frame,
+        "Calc. {0} frames".format(frame_count),
+        (0, frame.shape[0] - 40),
+    )
+    put_text(frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 10))
 
 
 def adjust_gamma(image, gamma=1.0):
