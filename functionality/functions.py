@@ -8,6 +8,7 @@ from tensorflow import keras
 import random
 import tkinter as tk
 from tkinter import simpledialog
+import time
 
 
 
@@ -195,6 +196,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
             2,  
             cv2.LINE_4,
         )
+        
 
         if face.done_calculating == True:
             if face.mask_detected == True:
@@ -215,6 +217,30 @@ def draw_on_frame(frame, faces, gebruiker_input):
 
     return frame
 
+testVar = 0
+links = 5
+rechts = 450 
+def draw_banner(frame):
+    global testVar, links, rechts
+    if (testVar > 1):
+        links = links+10
+        testVar = 0
+        print (links)
+        if (links >= 635):
+            links = 0
+     
+
+    cv2.putText(
+        frame,
+        "hoi",
+        (links, rechts),  
+        font, 1,  
+        (0, 255, 255),  
+        2,  
+        cv2.LINE_4,
+    )
+    testVar = testVar+1
+    
 
 def draw_smiley(frame, roi, emoji_img):
     x, y, w, h = roi

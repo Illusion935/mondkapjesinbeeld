@@ -4,6 +4,7 @@ from functionality.interface import *
 cap = cv2.VideoCapture(0)
 faces = []
 fourcc = cv2.VideoWriter_fourcc(*"XVID")
+
 # out = cv2.VideoWriter("out.avi", fourcc, 20.0, (640, 480))
 
 
@@ -20,6 +21,7 @@ if __name__ == "__main__":
         faces = caffe_detect_faces(frame, faces)
         faces = detect_mask_with_model(faces)
         frame = draw_on_frame(frame, faces, gebruiker_input)
+        tekst  = draw_banner(frame)
         cv2.imshow("window", frame)
         k = cv2.waitKey(30) & 0xFF
         if k == 27:
