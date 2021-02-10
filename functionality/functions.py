@@ -11,6 +11,7 @@ from tkinter import simpledialog
 import threading
 from playsound import playsound
 import time
+from datetime import datetime
 
 
 from functionality.interface import *
@@ -30,8 +31,6 @@ cvNet = cv2.dnn.readNetFromCaffe(
 # Adjust threshold value in range 80 to 105 based on your light.
 bw_threshold = 80
 
-# User message
-
 
 def play_sound(audiofile):
     playsound(audiofile)
@@ -44,6 +43,9 @@ total_seconds = 0
 do_reset = True
 fps = 0
 
+# For playing audio's with interval
+prev_time = time.time()
+
 
 def load_images_from_folder(folder):
     images = []
@@ -54,7 +56,7 @@ def load_images_from_folder(folder):
     return images
 
 
-def load_audios_from_folder(folder):
+def load_audio_from_folder(folder):
     audio = os.listdir(folder)
     return audio
 
@@ -62,7 +64,9 @@ def load_audios_from_folder(folder):
 # load emoji's
 positive_emojis = load_images_from_folder("data/emojis/positive")
 negative_emojis = load_images_from_folder("data/emojis/negative")
-audio_files = load_audios_from_folder("data/audio")
+morning_audio_files = load_audio_from_folder("data/audio/morgen")
+afternoon_audio_files = load_audio_from_folder("data/audio/middag")
+evening_audio_files = load_audio_from_folder("data/audio/avond")
 
 
 def calculate_FPS():
@@ -105,7 +109,25 @@ def adjust_gamma(image, gamma=1.0):
     return cv2.LUT(image.astype(np.uint8), table.astype(np.uint8))
 
 
+def get_daytime():
+    hour = datetime.now().hour
+    return (
+        "morning" if 5 <= hour < 12 else "afternoon" if 12 <= hour < 17 else "evening"
+    )
+
+
+def get_audio():
+    daytime = get_daytime()
+    if daytime == "morning":
+        return "morgen/" + random.choice(morning_audio_files)
+    elif daytime == "afternoon":
+        return "middag/" + random.choice(afternoon_audio_files)
+    elif daytime == "evening":
+        return "avond/" + random.choice(evening_audio_files)
+
+
 def caffe_detect_faces(frame, old_faces):
+    global prev_time
     # Create thread for playing sound
     sound_thread = threading.Thread(target=play_sound, daemon=True)
     gamma = 2.0
@@ -143,29 +165,31 @@ def caffe_detect_faces(frame, old_faces):
                         face.new_face = False
                         face.roi = roi
                         face.roi_img = roi_img
-                        face.wait_till_delete = WAIT_FRAMES
+                        # face.wait_till_delete = WAIT_FRAMES
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
 
                 if updated_faces[-1].new_face == True:
-                    audio = random.choice(audio_files)
-                    if not sound_thread.is_alive():
+                    current_time = time.time()
+                    if not sound_thread.is_alive() and current_time > prev_time + 5:
+                        audio = get_audio()
                         sound_thread = threading.Thread(
                             target=play_sound,
                             args=("data/audio/" + audio,),
                             daemon=True,
                         )
                         sound_thread.start()
+                        prev_time = current_time
         except:
             pass
 
-    for face in old_faces:
-        if face.wait_till_delete > 0:
-            face.wait_till_delete -= 1
-            updated_faces.append(face)
-        else:
-            old_faces.remove(face)
+    # for face in old_faces:
+    #     if face.wait_till_delete > 0:
+    #         face.wait_till_delete -= 1
+    #         updated_faces.append(face)
+    #     else:
+    #         old_faces.remove(face)
 
     return updated_faces
 
@@ -194,6 +218,9 @@ def detect_mask_with_model(old_faces):
                 print(e)
         updated_faces.append(face)
     return updated_faces
+
+
+banner_x_offset = 0
 
 
 def draw_on_frame(frame, faces, gebruiker_input):
