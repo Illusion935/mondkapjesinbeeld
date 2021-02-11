@@ -32,10 +32,6 @@ cvNet = cv2.dnn.readNetFromCaffe(
 bw_threshold = 80
 
 
-def play_sound(audiofile):
-    playsound(audiofile)
-
-
 # For FPS
 start_time = None
 frame_count = 0
@@ -45,6 +41,9 @@ fps = 0
 
 # For playing audio's with interval
 prev_time = time.time()
+
+# Banner
+banner_x_offset = 0
 
 
 def load_images_from_folder(folder):
@@ -67,6 +66,10 @@ negative_emojis = load_images_from_folder("data/emojis/negative")
 morning_audio_files = load_audio_from_folder("data/audio/morgen")
 afternoon_audio_files = load_audio_from_folder("data/audio/middag")
 evening_audio_files = load_audio_from_folder("data/audio/avond")
+
+
+def play_sound(audiofile):
+    playsound(audiofile)
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -226,9 +229,6 @@ def draw_on_frame(frame, faces, gebruiker_input):
         bottom_message,
         (btm_x, btm_y),
     )
-
-
-banner_x_offset = 0
 
 
 def calculate_top_text_pos(frame_dim, text):
