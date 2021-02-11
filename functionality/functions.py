@@ -140,7 +140,7 @@ def caffe_detect_faces(frame, old_faces):
 
                 if updated_faces[-1].new_face == True:
                     current_time = time.time()
-                    if not sound_thread.is_alive() and current_time > prev_time + 5:
+                    if not sound_thread.is_alive() and current_time > prev_time + 60:
                         audio = get_audio()
                         sound_thread = threading.Thread(
                             target=play_sound,
