@@ -252,7 +252,6 @@ def draw_on_frame(frame, faces, gebruiker_input):
                     text,
                     (x - int(w / 2), y),
                     scale=w / scalar,
-                    # font_size=(int(w / 2)),
                     color_RGB=(220, 5, 7),
                 )
 
@@ -344,25 +343,3 @@ def put_text(
         line,
     )
     return frame
-
-
-# def put_text(
-#     frame,
-#     text,
-#     org,
-#     font_size=15,
-#     color_RGB=(255, 255, 255),
-#     thickness=1,
-#     line=cv2.LINE_AA,
-# ):
-#     font = ImageFont.truetype("data/fonts/verdana.ttf", 15, 0)
-
-#     frame_RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-#     # frame_PIL = Image.fromarray(frame_RGB)
-#     # draw = ImageDraw.Draw(frame_PIL)
-#     # draw.text(org, text, font=font, fill=color_RGB)
-
-#     # frame_RGB = np.array(frame_PIL)
-#     frame = cv2.cvtColor(frame_RGB, cv2.COLOR_RGB2BGR)
-
-# return frame
