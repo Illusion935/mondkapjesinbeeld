@@ -32,6 +32,7 @@ if __name__ == "__main__":
     cv2.namedWindow("Mondkapjes in Beeld", cv2.WINDOW_FREERATIO)
 
     # Ask for user input for the message of the day
+    # EDITED: Doesn't ask anymore, just reads from textfile
     gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
@@ -40,7 +41,6 @@ if __name__ == "__main__":
         if webcam_check_failed(frame):
             show_error("Webcam not found")
             break
-        display_fps(frame)
         # Convert image into gray
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 

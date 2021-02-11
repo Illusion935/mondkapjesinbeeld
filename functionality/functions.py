@@ -69,40 +69,6 @@ afternoon_audio_files = load_audio_from_folder("data/audio/middag")
 evening_audio_files = load_audio_from_folder("data/audio/avond")
 
 
-def calculate_FPS():
-    global start_time
-    global frame_count
-    global total_seconds
-    global do_reset
-    global fps
-    if start_time is not None:
-        end_time = time.time()
-        seconds = end_time - start_time
-        # Take average of 20 frames
-        if frame_count >= 50:
-            do_reset = True
-        # Start counting after number of frames
-        if frame_count >= 4 and do_reset == True:
-            frame_count = 0
-            total_seconds = 0
-            do_reset = False
-        frame_count += 1
-        total_seconds += seconds
-        fps = frame_count / total_seconds
-    start_time = time.time()
-    return (frame_count, fps)
-
-
-def display_fps(frame):
-    frame_count, fps = calculate_FPS()
-    put_text(
-        frame,
-        "Calc. {0} frames".format(frame_count),
-        (0, frame.shape[0] - 40),
-    )
-    put_text(frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 10))
-
-
 def adjust_gamma(image, gamma=1.0):
     invGamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)])
@@ -209,9 +175,6 @@ def detect_mask_with_model(faces):
                 print(e)
 
 
-banner_x_offset = 0
-
-
 def draw_on_frame(frame, faces, gebruiker_input):
     scalar = 170
     frame_h, frame_w = frame.shape[:2]
@@ -228,7 +191,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                 put_text(
                     frame,
                     text,
-                    (x - int(w / 2), y),
+                    (x - int(w / 2), y + h),
                     scale=w / scalar,
                     color_RGB=(0, 255, 0),
                 )
@@ -238,20 +201,23 @@ def draw_on_frame(frame, faces, gebruiker_input):
                 put_text(
                     frame,
                     text,
-                    (x - int(w / 2), y),
+                    (x - int(w / 2), y + h),
                     scale=w / scalar,
                     color_RGB=(220, 5, 7),
                 )
 
+        top_x, top_y = calculate_top_text_pos((frame_w, frame_h), top_message)
         # Top message
         put_text(
             frame,
             top_message,
-            (10, 25),
+            (top_x, top_y),
             color_RGB=(247, 226, 92),
             thickness=2,
             line=cv2.LINE_4,
         )
+
+    display_fps(frame)
 
     # Bottom message
     btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
@@ -262,11 +228,65 @@ def draw_on_frame(frame, faces, gebruiker_input):
     )
 
 
-def calculate_bottom_text_pos(frame_dim, text):
+banner_x_offset = 0
+
+
+def calculate_top_text_pos(frame_dim, text):
     frame_w, frame_h = frame_dim
-    x = int(frame_w - len(text) * 17)
-    y = int(frame_h - frame_h / 40)
+    text_pix_len = int(len(text) * 17)
+    x = frame_w - text_pix_len
+    y = 40
     return (x, y)
+
+
+def calculate_bottom_text_pos(frame_dim, text):
+    global banner_x_offset
+    frame_w, frame_h = frame_dim
+    text_pix_len = int(len(text) * 17)
+    x = frame_w - banner_x_offset
+    y = int(frame_h - frame_h / 40)
+    if banner_x_offset < frame_w + text_pix_len:
+        banner_x_offset += 3
+    else:
+        banner_x_offset = 0
+    return (x, y)
+
+
+def calculate_FPS():
+    global start_time
+    global frame_count
+    global total_seconds
+    global do_reset
+    global fps
+    if start_time is not None:
+        end_time = time.time()
+        seconds = end_time - start_time
+        # Take average of 20 frames
+        if frame_count >= 50:
+            do_reset = True
+        # Start counting after number of frames
+        if frame_count >= 4 and do_reset == True:
+            frame_count = 0
+            total_seconds = 0
+            do_reset = False
+        frame_count += 1
+        total_seconds += seconds
+        fps = frame_count / total_seconds
+    start_time = time.time()
+    return (frame_count, fps)
+
+
+def display_fps(frame):
+    frame_count, fps = calculate_FPS()
+    put_text(
+        frame,
+        "Calc. {0} frames".format(frame_count),
+        (0, frame.shape[0] - 80),
+        scale=0.5,
+    )
+    put_text(
+        frame, "{0} fps".format(round(fps, 2)), (0, frame.shape[0] - 50), scale=0.5
+    )
 
 
 def draw_smiley(frame, roi, emoji_BGRA):
