@@ -45,8 +45,8 @@ if __name__ == "__main__":
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         faces = caffe_detect_faces(frame, faces)
-        faces = detect_mask_with_model(faces)
-        frame = draw_on_frame(frame, faces, gebruiker_input)
+        detect_mask_with_model(faces)
+        draw_on_frame(frame, faces, gebruiker_input)
         cv2.imshow("Mondkapjes in Beeld", frame)
         k = cv2.waitKey(30) & 0xFF
 

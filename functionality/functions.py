@@ -165,7 +165,6 @@ def caffe_detect_faces(frame, old_faces):
                         face.new_face = False
                         face.roi = roi
                         face.roi_img = roi_img
-                        # face.wait_till_delete = WAIT_FRAMES
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
@@ -184,21 +183,13 @@ def caffe_detect_faces(frame, old_faces):
         except:
             pass
 
-    # for face in old_faces:
-    #     if face.wait_till_delete > 0:
-    #         face.wait_till_delete -= 1
-    #         updated_faces.append(face)
-    #     else:
-    #         old_faces.remove(face)
-
     return updated_faces
 
 
-def detect_mask_with_model(old_faces):
-    updated_faces = []
+def detect_mask_with_model(faces):
     img_size = 124
 
-    for face in old_faces:
+    for face in faces:
         try:
             roi_img = face.roi_img
             roi_img = cv2.resize(roi_img, (img_size, img_size))
@@ -216,8 +207,6 @@ def detect_mask_with_model(old_faces):
                 pass
             else:
                 print(e)
-        updated_faces.append(face)
-    return updated_faces
 
 
 banner_x_offset = 0
@@ -234,20 +223,19 @@ def draw_on_frame(frame, faces, gebruiker_input):
 
         if face.done_calculating == True:
             if face.mask_detected == True:
-                frame = draw_smiley(frame, face.roi, face.positive_emoji_img)
+                draw_smiley(frame, face.roi, face.positive_emoji_img)
                 text = "Mondmasker gevonden!"
-                frame = put_text(
+                put_text(
                     frame,
                     text,
                     (x - int(w / 2), y),
                     scale=w / scalar,
-                    # font_size=(int(w / 2)),
                     color_RGB=(0, 255, 0),
                 )
             elif face.mask_detected == False:
-                frame = draw_smiley(frame, face.roi, face.negative_emoji_img)
+                draw_smiley(frame, face.roi, face.negative_emoji_img)
                 text = "Mondmasker vergeten!"
-                frame = put_text(
+                put_text(
                     frame,
                     text,
                     (x - int(w / 2), y),
@@ -256,7 +244,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
                 )
 
         # Top message
-        frame = put_text(
+        put_text(
             frame,
             top_message,
             (10, 25),
@@ -267,13 +255,11 @@ def draw_on_frame(frame, faces, gebruiker_input):
 
     # Bottom message
     btm_x, btm_y = calculate_bottom_text_pos((frame_w, frame_h), bottom_message)
-    frame = put_text(
+    put_text(
         frame,
         bottom_message,
         (btm_x, btm_y),
     )
-
-    return frame
 
 
 def calculate_bottom_text_pos(frame_dim, text):
@@ -318,7 +304,6 @@ def draw_smiley(frame, roi, emoji_BGRA):
             pass
         else:
             print(e)
-    return frame
 
 
 def put_text(
@@ -342,4 +327,3 @@ def put_text(
         thickness,
         line,
     )
-    return frame
