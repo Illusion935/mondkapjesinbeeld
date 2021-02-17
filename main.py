@@ -1,5 +1,4 @@
 from functionality.functions import *
-from functionality.interface import *
 from config.config import *
 
 dim = (1080, 720)
@@ -31,9 +30,6 @@ if __name__ == "__main__":
 
     cv2.namedWindow("Mondkapjes in Beeld", cv2.WINDOW_FREERATIO)
 
-    # Ask for user input for the message of the day
-    # EDITED: Doesn't ask anymore, just reads from textfile
-    gebruiker_input = interface()
     while True:
         ret, frame = cap.read()
         frame = cv2.flip(frame, 1)
@@ -46,7 +42,7 @@ if __name__ == "__main__":
 
         faces = caffe_detect_faces(frame, faces)
         detect_mask_with_model(faces)
-        draw_on_frame(frame, faces, gebruiker_input)
+        draw_on_frame(frame, faces)
         cv2.imshow("Mondkapjes in Beeld", frame)
         k = cv2.waitKey(30) & 0xFF
 

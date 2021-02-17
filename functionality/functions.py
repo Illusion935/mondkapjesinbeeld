@@ -14,7 +14,6 @@ import time
 from datetime import datetime
 
 
-from functionality.interface import *
 from .Face import Face
 from config.config import *
 
@@ -60,12 +59,28 @@ def load_audio_from_folder(folder):
     return audio
 
 
+def load_daymessages(filename):
+    daymessages = []
+
+    with open(filename, "r") as file:
+        for line in file:
+            line = line.rstrip("\n")
+            daymessages.append(line)
+
+    return daymessages
+
+
 # load emoji's
 positive_emojis = load_images_from_folder("data/emojis/positive")
 negative_emojis = load_images_from_folder("data/emojis/negative")
+
+# load audio
 morning_audio_files = load_audio_from_folder("data/audio/morgen")
 afternoon_audio_files = load_audio_from_folder("data/audio/middag")
 evening_audio_files = load_audio_from_folder("data/audio/avond")
+
+# load daymessages
+daymessages = load_daymessages("data/daymessages/tekst.txt")
 
 
 def play_sound(audiofile):
@@ -76,6 +91,11 @@ def adjust_gamma(image, gamma=1.0):
     invGamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** invGamma) * 255 for i in np.arange(0, 256)])
     return cv2.LUT(image.astype(np.uint8), table.astype(np.uint8))
+
+
+def get_daymessage():
+    day = datetime.now().weekday()
+    return daymessages[day]
 
 
 def get_daytime():
@@ -178,10 +198,10 @@ def detect_mask_with_model(faces):
                 print(e)
 
 
-def draw_on_frame(frame, faces, gebruiker_input):
+def draw_on_frame(frame, faces):
     scalar = 170
     frame_h, frame_w = frame.shape[:2]
-    top_message = gebruiker_input
+    top_message = get_daymessage()
     bottom_message = "Dit beeld wordt niet opgeslagen"
 
     for face in faces:
@@ -233,7 +253,7 @@ def draw_on_frame(frame, faces, gebruiker_input):
 
 def calculate_top_text_pos(frame_dim, text):
     frame_w, frame_h = frame_dim
-    text_pix_len = int(len(text) * 17)
+    text_pix_len = int(len(text) * 18)
     x = frame_w - text_pix_len
     y = 40
     return (x, y)
