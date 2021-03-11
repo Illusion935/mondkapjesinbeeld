@@ -16,6 +16,8 @@ from datetime import datetime
 
 from .Face import Face
 from config.config import *
+from .stats_functions import *
+
 
 face_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_frontalface_default.xml")
 mouth_cascade = cv2.CascadeClassifier("data\\xml\\haarcascade_mcs_mouth.xml")
@@ -98,7 +100,7 @@ def get_daymessage():
     return daymessages[day]
 
 
-def get_daytime():
+def get_morn_aft_even():
     hour = datetime.now().hour
     return (
         "morning" if 5 <= hour < 12 else "afternoon" if 12 <= hour < 17 else "evening"
@@ -106,7 +108,7 @@ def get_daytime():
 
 
 def get_audio():
-    daytime = get_daytime()
+    daytime = get_morn_aft_even()
     if daytime == "morning":
         return "morgen/" + random.choice(morning_audio_files)
     elif daytime == "afternoon":
@@ -116,11 +118,7 @@ def get_audio():
 
 
 def caffe_detect_faces(frame, old_faces):
-    global prev_time
-    # Create thread for playing sound
-    sound_thread = threading.Thread(target=play_sound, daemon=True)
     gamma = 2.0
-    ALLOWED_DIFF = 150
     updated_faces = []
     h = frame.shape[0]
     w = frame.shape[1]
@@ -136,46 +134,48 @@ def caffe_detect_faces(frame, old_faces):
         try:
             box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
             (startX, startY, endX, endY) = box.astype("int")
-            if endX - startX > 0.75 * w or endY - startY > 0.9 * h:
-                break
+
             confidence = detections[0, 0, i, 2]
-            if confidence > conf_bar:
+            if confidence > conf_bar and not (
+                endX - startX > 0.75 * w or endY - startY > 0.9 * h
+            ):
                 roi = [startX, startY, endX - startX, endY - startY]
                 roi_img = frame[startY:endY, startX:endX]
-                pos_emoji = random.choice(positive_emojis)
-                neg_emoji = random.choice(negative_emojis)
-                updated_faces.append(Face(roi, pos_emoji, neg_emoji, roi_img))
+
                 for face in old_faces:
                     if (
                         abs(face.roi[0] - roi[0]) < ALLOWED_DIFF
                         and abs(face.roi[1] - roi[1]) < ALLOWED_DIFF
                     ):
-                        updated_faces.pop(-1)
                         face.new_face = False
                         face.roi = roi
                         face.roi_img = roi_img
+                        face.ghost = False
+                        face.wait_till_delete = WAIT_FRAMES
                         updated_faces.append(face)
                         old_faces.remove(face)
                         break
-
-                if updated_faces[-1].new_face == True:
-                    current_time = time.time()
-                    if not sound_thread.is_alive() and current_time > prev_time + 60:
-                        audio = get_audio()
-                        sound_thread = threading.Thread(
-                            target=play_sound,
-                            args=("data/audio/" + audio,),
-                            daemon=True,
-                        )
-                        sound_thread.start()
-                        prev_time = current_time
+                else:  # new face
+                    pos_emoji = random.choice(positive_emojis)
+                    neg_emoji = random.choice(negative_emojis)
+                    face = Face(roi, pos_emoji, neg_emoji, roi_img)
+                    updated_faces.append(face)
         except:
             pass
+    for face in old_faces:
+        if face.wait_till_delete > 0:
+            face.wait_till_delete -= 1
+            face.ghost = True
+            updated_faces.append(face)
 
     return updated_faces
 
 
 def detect_mask_with_model(faces):
+    global prev_time
+    # Create thread for playing sound
+    sound_thread = threading.Thread(target=play_sound, daemon=True)
+
     img_size = 124
 
     for face in faces:
@@ -191,6 +191,19 @@ def detect_mask_with_model(faces):
             elif result >= 0.11:
                 face.mask_detected = False
             face.done_calculating = True
+
+            if face.new_face == True and face.mask_detected != None:
+                update_stats(face)
+                # current_time = time.time()
+                # if not sound_thread.is_alive() and current_time > prev_time + 60:
+                #     audio = get_audio()
+                #     sound_thread = threading.Thread(
+                #         target=play_sound,
+                #         args=("data/audio/" + audio,),
+                #         daemon=True,
+                #     )
+                #     sound_thread.start()
+                #     prev_time = current_time
         except cv2.error as e:
             if e.code == cv2.Error.StsAssert:
                 pass
@@ -207,7 +220,7 @@ def draw_on_frame(frame, faces):
     for face in faces:
         x, y, w, h = face.roi
 
-        if face.done_calculating == True:
+        if face.done_calculating == True and face.ghost == False:
             if face.mask_detected == True:
                 draw_smiley(frame, face.roi, face.positive_emoji_img)
                 text = "Mondmasker gevonden!"

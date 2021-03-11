@@ -21,6 +21,25 @@ def webcam_check_failed(frame):
         return False
 
 
+def LAB_CLAHE_contrast_improvement(img):
+    # -----Converting image to LAB Color model-----------------------------------
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+
+    # -----Splitting the LAB image to different channels-------------------------
+    l, a, b = cv2.split(lab)
+
+    # -----Applying CLAHE to L-channel-------------------------------------------
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    cl = clahe.apply(l)
+
+    # -----Merge the CLAHE enhanced L-channel with the a and b channel-----------
+    limg = cv2.merge((cl, a, b))
+
+    # -----Converting image from LAB Color model to RGB model--------------------
+    final = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+    return final
+
+
 if __name__ == "__main__":
     # Check if webcam can be found
     frame = cap.read()[1]
@@ -32,15 +51,15 @@ if __name__ == "__main__":
 
     while True:
         ret, frame = cap.read()
-        frame = cv2.flip(frame, 1)
-        frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
         if webcam_check_failed(frame):
             show_error("Webcam not found")
             break
-        # Convert image into gray
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        faces = caffe_detect_faces(frame, faces)
+        frame = cv2.flip(frame, 1)
+        frame = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
+        dst = LAB_CLAHE_contrast_improvement(frame)
+
+        faces = caffe_detect_faces(dst, faces)
         detect_mask_with_model(faces)
         draw_on_frame(frame, faces)
         cv2.imshow("Mondkapjes in Beeld", frame)
