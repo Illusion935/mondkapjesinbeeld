@@ -80,9 +80,13 @@ negative_emojis = load_images_from_folder("data/emojis/negative")
 morning_audio_files = load_audio_from_folder("data/audio/morgen")
 afternoon_audio_files = load_audio_from_folder("data/audio/middag")
 evening_audio_files = load_audio_from_folder("data/audio/avond")
+songs = load_audio_from_folder("data/audio/rockyIV")
 
 # load daymessages
 daymessages = load_daymessages("data/daymessages/tekst.txt")
+
+# global sound_thread
+sound_thread = None
 
 
 def play_sound(audiofile):
@@ -108,13 +112,14 @@ def get_morn_aft_even():
 
 
 def get_audio():
-    daytime = get_morn_aft_even()
-    if daytime == "morning":
-        return "morgen/" + random.choice(morning_audio_files)
-    elif daytime == "afternoon":
-        return "middag/" + random.choice(afternoon_audio_files)
-    elif daytime == "evening":
-        return "avond/" + random.choice(evening_audio_files)
+    return "rockyIV/" + random.choice(songs)
+    # daytime = get_morn_aft_even()
+    # if daytime == "morning":
+    #     return "morgen/" + random.choice(morning_audio_files)
+    # elif daytime == "afternoon":
+    #     return "middag/" + random.choice(afternoon_audio_files)
+    # elif daytime == "evening":
+    #     return "avond/" + random.choice(evening_audio_files)
 
 
 def caffe_detect_faces(frame, old_faces):
@@ -172,9 +177,9 @@ def caffe_detect_faces(frame, old_faces):
 
 
 def detect_mask_with_model(faces):
-    global prev_time
+    global prev_time, sound_thread
     # Create thread for playing sound
-    sound_thread = threading.Thread(target=play_sound, daemon=True)
+    # sound_thread = threading.Thread(target=play_sound, daemon=True)
 
     img_size = 124
 
@@ -195,15 +200,17 @@ def detect_mask_with_model(faces):
             if face.new_face == True and face.mask_detected != None:
                 update_stats(face)
                 # current_time = time.time()
-                # if not sound_thread.is_alive() and current_time > prev_time + 60:
-                #     audio = get_audio()
-                #     sound_thread = threading.Thread(
-                #         target=play_sound,
-                #         args=("data/audio/" + audio,),
-                #         daemon=True,
-                #     )
-                #     sound_thread.start()
-                #     prev_time = current_time
+                if sound_thread == None or (
+                    not sound_thread.is_alive()  # and current_time > prev_time + 60
+                ):
+                    audio = get_audio()
+                    sound_thread = threading.Thread(
+                        target=play_sound,
+                        args=("data/audio/" + audio,),
+                        daemon=True,
+                    )
+                    sound_thread.start()
+                    # prev_time = current_time
         except cv2.error as e:
             if e.code == cv2.Error.StsAssert:
                 pass
